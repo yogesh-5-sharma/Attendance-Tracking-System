@@ -1,0 +1,30 @@
+{% extends 'ATS75/base.html' %}
+{% block content %}
+
+<h2>Add Subject</h2>
+
+<div class="container">
+
+<h4>Add some subjects to create a timetable</h4>
+
+{% if error_message %}
+    <p style="color: red; font-weight: bold;">{{error_message}}</p>
+{% endif %}
+
+<form action="{% url 'ATS75:add_subject' %}" method="POST">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="text" style="display: none;" id="addanother" name="addanother" value="0">
+    <input class="btn btn-success" type="submit" value="Save">
+    <input class="btn btn-success" type="submit" value="Save and Add Another" onclick="addanotherfunction()">
+</form>
+
+</div>
+
+<script>
+    function addanotherfunction(){
+        document.getElementById("addanother").value="1"
+    }
+</script>
+
+{% endblock %}

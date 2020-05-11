@@ -1,0 +1,117 @@
+{% extends 'ATS75/base.html' %}
+{% block content %}
+
+<h2>Add Schedule</h2>
+
+<style>
+select {
+    border: none;
+    outline: none;
+    scroll-behavior: smooth;
+    padding: 10px;
+}
+
+option{
+    font-size: medium;
+}
+</style>
+
+<div class="row" style="padding: 1%;">
+    <div class="col-sm-12">
+        <a href="{% url 'ATS75:add_subject' %}" class="btn btn-info" role="button">Add more subjects</a>
+    </div>
+</div>
+<br>
+
+<form action="{% url 'ATS75:add_schedule' %}" method="post" onsubmit="return validate()">
+
+    {% csrf_token %}
+    {{form.as_p}}
+
+    <div class="table-responsive">
+    <table class="table table-striped table-hover" align="center" id="timetable">
+
+        <tr>
+            <th> --- </th>
+            {% for slots in availableslots %}
+                <th style="text-align: center;"> {{slots}} </th>
+            {% endfor %}
+        </tr>
+
+        {% for days in daysofweek %}
+            <tr>
+                <th> {{days}} </th>
+                {% for slots in availableslots %}
+                    <td>
+
+                        <select name="subject_{{days}}_{{slots}}" id="subject_{{days}}_{{slots}}">
+                            <option value="" selected></option>
+                            {% for subject in user.subject_set.all %}
+                                <option value="{{subject.pk}}">{{subject.subject_code}}:{{subject.subject_name}}</option>
+                            {% endfor %}
+                        </select>
+
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+
+        <!-- script for selecting the previous selected value if any -->
+        <script>
+            {% for cell in user.ttcell_set.all %}
+                var id="subject_{{cell.day}}_{{cell.time_slot_start|time:'H:i'}} - {{cell.time_slot_end|time:'H:i'}}";
+                document.getElementById(id).value="{{cell.subject.pk}}";
+            {% endfor %}
+            document.getElementById("id_start_date").value="{{user.schedule_start_date.isoformat}}";
+            document.getElementById("id_end_date").value="{{user.schedule_end_date.isoformat}}";
+            document.getElementById("id_percentage_criteria").value="{{user.threshold}}";
+        </script>
+
+    </table>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12" style="padding: 1%; text-align: center;">
+            <input class="btn btn-success btn-lg" type="submit" value="Submit">
+        </div>
+    </div>
+
+</form>
+
+<script>
+    function validate(){
+
+        var daysofweek=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        var availableslots=['08:00 - 09:00','09:00 - 10:00','10:00 - 11:00','11:00 - 12:00','12:00 - 13:00',
+                            '13:00 - 14:00','14:00 - 15:00','15:00 - 16:00','16:00 - 17:00','17:00 - 18:00'];
+
+        var table = document.getElementById("timetable");
+        var empty=1;
+        
+        for(var i=0 ; i<daysofweek.length ; i++){
+            for(var j=0 ; j<availableslots.length ; j++){
+                var id="subject_"+daysofweek[i]+"_"+availableslots[j];
+                cell=document.getElementById(id);
+                if(cell.value!=""){
+                    empty=0;
+                }
+            }
+        }
+        error_text="";
+        var startdate=document.getElementById("id_start_date").value;
+        var enddate=document.getElementById("id_end_date").value;
+        if(startdate>=enddate){
+            error_text+="Please enter correct dates, start date should be less than end date !!! \n\n";
+        }
+        if(empty==1){
+            error_text+="Please enter some subjects in your timetable !!!\n";
+        }
+        if(error_text!=""){
+            alert(error_text);
+            return false;
+        }
+        return true;
+    }
+</script>
+
+{% endblock %}

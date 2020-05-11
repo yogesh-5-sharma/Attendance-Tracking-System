@@ -1,0 +1,123 @@
+{% extends "ATS75/base.html" %}
+{% block content %}
+
+{% for days in daysofweek %}
+    
+<div class="container">
+    <div class="modal fade" id="{{days}}" role="dialog" style="padding: 10%;">
+        <div class="modal-dialog">
+
+            <div class="modal-content">
+                <div class="modal-body">
+
+        <form action="{% url 'ATS75:show_attendance_record' %}" method="POST">
+        {% csrf_token %}
+
+            <input type="text" name="day" value="{{days}}" style="display: none;">
+            <input type="text" id="{{days}}_date" name="{{days}}_date" style="display: none;">
+
+            <input type="checkbox" name="{{days}}_GH" id="{{days}}_GH" value="1">
+            <label for="{{days}}_GH">That day is a Gazetted Holiday</label><br><br>
+
+            <ul class="list-group">
+            {% for cell in user.ttcell_set.all %}
+                {% if cell.day == days %}
+                    <li class="list-group-item">
+                    <p>Did you attended {{cell.subject.subject_name}} at {{cell.time_slot_start}}??</p>
+                    <input type="radio" id="{{days}}_{{cell.time_slot_start}}_1" name="{{days}}_{{cell.time_slot_start.isoformat}}" value="1">
+                    <label for="{{days}}_{{cell.time_slot_start}}_1">Present</label><br>
+
+                    <input type="radio" id="{{days}}_{{cell.time_slot_start}}_0" name="{{days}}_{{cell.time_slot_start.isoformat}}" value="0">
+                    <label for="{{days}}_{{cell.time_slot_start}}_0">Absent</label><br>
+
+                    <input type="radio" id="{{days}}_{{cell.time_slot_start}}_TL" name="{{days}}_{{cell.time_slot_start.isoformat}}" value="TL">
+                    <label for="{{days}}_{{cell.time_slot_start}}_TL">Teacher On Leave</label><br>
+
+                    <input type="radio" id="{{days}}_{{cell.time_slot_start}}_CS" name="{{days}}_{{cell.time_slot_start.isoformat}}" value="CS">
+                    <label for="{{days}}_{{cell.time_slot_start}}_CS">Class Suspended</label><br>
+
+                    </li>
+
+                {% endif %}
+            {% endfor %}
+            </ul>
+            <input class="btn btn-success" type="submit" value="OK">
+        </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endfor %}
+
+<h1 style="text-align: center;">Subject Wise Report</h1>
+
+<div class="table-responsive">
+<table class="table table-striped table-hover" align="center">
+    <tr>
+        <th>Subject</th><th>Total Classes</th><th>Present</th><th>Precentage</th><th>Absents You Can Take</th>
+    </tr>
+    {% for row in subjectreport %}
+        <tr>
+            {% for data in row %}
+                {% if forloop.counter0 == 3 %}
+                    <td>{{data|floatformat:2}}%</td>
+                
+                {% else %}
+                    <td>{{data}}</td>
+                {% endif %}
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+</div>
+
+<hr>
+
+<h1 style="text-align: center;" >My Attendance Record</h1>
+
+<div class="table-responsive">
+<table class="table table-striped table-hover" >
+    <tr>
+        <th>---</th>
+        {% for slots in availableslots %}
+            <th>{{slots}}</th>
+        {% endfor %}
+    </tr>
+
+    {% for date in datesrange %}
+        <tr>
+            <th onclick="addrecord(this);" id="{{date|date:'Y-m-d'}}" role="button">{{date|date:'M j, Y (D)'}}</th>
+            {% for slots in availableslots %}
+                <td id="cell_{{date}}_{{slots}}" align="center"></td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+
+    <!--script for filling record in cell-->
+    <script>
+        {% for cell in user.arcell_set.all %}
+            var id="cell_{{cell.date}}_{{cell.time_slot_start|time:'H:i'}} - {{cell.time_slot_end|time:'H:i'}}";
+            document.getElementById(id).innerHTML="{{cell.value}}";
+        {% endfor %}
+    </script>
+
+</table>
+</div>
+
+<p style="text-align: center; color: red; font-weight: bold;">*Click on the date to update attendance record for that date.</p>
+
+<script>
+    function addrecord(ele){
+        var value=ele.innerHTML;
+        var len=value.length;
+        var day=value[len-4]+value[len-3]+value[len-2];
+        var count=0;
+        document.getElementById(day+"_date").value=ele.id;
+        $("#"+day).modal();
+    }
+</script>
+
+{% endblock %}
